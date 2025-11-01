@@ -1,0 +1,60 @@
+{
+  "urawa": {
+    "name": "浦和校",
+    "classes": {
+      "baby": {
+        "classId": "baby",
+        "schedule": {
+          "tue": [{ "time": "14:45", "instructor": "jp" }],
+          "fri": [{ "time": "13:30", "instructor": "jp" }],
+          "sat": [{ "time": "15:25", "instructor": "jp" }]
+        }
+      },
+      "pair": {
+        "classId": "pair",
+        "schedule": {
+          "fri": [{ "time": "15:30", "instructor": "jp" }],
+          "sat": [{ "time": "11:50", "instructor": "jp" }]
+        }
+      },
+      "solo": {
+        "classId": "solo",
+        "schedule": {
+          "wed": [{ "time": "15:30", "instructor": "jp" }],
+          "thu": [{ "time": "18:50", "instructor": "jp" }],
+          "fri": [
+            { "time": "16:20", "instructor": "jp" },
+            { "time": "18:50", "instructor": "jp" }
+          ],
+          "sat": [
+            { "time": "10:10", "instructor": "jp" },
+            { "time": "16:15", "instructor": "jp" }
+          ]
+        }
+      },
+      "imm": {
+        "classId": "immarsion",
+        "schedule": {
+          "tue": [{ "time": "15:30", "instructor": "jp" }],
+          "fri": [{ "time": "17:25", "instructor": "jp" }],
+          "sat": [{ "time": "13:45", "instructor": "jp" }]
+        }
+      },
+      "ak1": {
+        "classId": "ak1",
+        "schedule": {
+          "thu": [
+            { "time": "15:30", "instructor": "native" },
+            { "time": "16:20", "instructor": "jp" }
+          ],
+          "sat": [
+            { "time": "11:00", "instructor": "jp" },
+            { "time": "11:50", "instructor": "native" },
+            { "time": "13:45", "instructor": "jp" },
+            { "time": "14:35", "instructor": "native" }
+          ]
+        }
+      }
+    }
+  }
+}

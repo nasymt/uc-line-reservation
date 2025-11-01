@@ -1,0 +1,22 @@
+[
+  {
+    "id": "baby",
+    "label": "幼児BBコース"
+  },
+  {
+    "id": "kids",
+    "label": "小学生KIDSコース"
+  },
+  {
+    "id": "teen",
+    "label": "中高生TEENコース"
+  },
+  {
+    "id": "adult",
+    "label": "大学生・社会人コース"
+  },
+  {
+    "id": "eiken",
+    "label": "英検コース"
+  }
+]
