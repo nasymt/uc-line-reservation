@@ -1,41 +1,47 @@
 <template>
     <section-card card-title="クラス選択">
         <template v-slot:cardItem>
-            <v-slide-group show-arrows>
-                <v-slide-group-item v-for="c in filteredClasses" :key="c.id" :value="c.id">
-                    <v-card class="ma-4 selectable-card" variant="elevated" width="280">
-                        <v-img :src="c.img" height="120" cover />
-                        <v-card-title class="py-2">{{ c.label }}</v-card-title>
-                        <v-card-text class="pt-0">
-                            <div class="d-flex justify-space-between">
-                                <div>
-                                    <div class="text-caption text-medium-emphasis">料金</div>
-                                    <div class="text-body-1">￥{{ 0 }}</div>
-                                </div>
-                                <div>
-                                    <div class="text-caption text-medium-emphasis">所要時間</div>
-                                    <div class="text-body-1">{{ c.duration }}</div>
-                                </div>
-                            </div>
-                        </v-card-text>
-                        <v-card-actions class="pt-0">
-                            <v-btn block color="primary" :variant="isSelected(c) ? 'flat' : 'outlined'"
-                                @click="store.setSelectedClass(c)">
-                                <template v-if="isSelected(c)">
-                                    <v-icon icon="mdi-check" class="mr-1" />
-                                    選択中
-                                </template>
-                                <template v-else>
-                                    このクラスを選ぶ
-                                </template>
+            <v-list class="class-list" lines="two" density="comfortable">
+                <!-- <v-list-item v-for="c in filteredClasses" :key="c.id" :title="c.label" :subtitle="c.description"
+                    :active="store.selectedClass?.id === c.id" @click="store.setSelectedClass(c)"> -->
+                <v-list-item v-for="c in filteredClasses" :key="c.id" :title="c.label" :subtitle="c.description"
+                    :active="store.selectedClass?.id === c.id">
+                    <template #title>
+                        <span>{{ c.label }}</span>
+                        <span v-if="store.recommendedClassId == c.id"
+                            :style="{ color: '#43C0A2', fontWeight: '600' }">(あなたへのオススメ!)</span>
+                    </template>
+                    <template #prepend>
+                        <v-checkbox
+                            :model-value="isSelected(c)"
+                            @click.stop="store.setSelectedClass(c)"
+                            :aria-pressed="isSelected(c)"
+                            :label="''"/>
+                        <!-- <v-img :src="c.img" alt="" width="96" height="64" class="class-thumb rounded mr-4" cover /> -->
+                    </template>
+
+                    <!-- 右側のボタン群（共通の詳細／選択） -->
+                    <template #append>
+                        <div class="d-flex align-center ga-2">
+                            <!-- <v-btn variant="outlined" size="small" prepend-icon="mdi-information-outline"> -->
+                            <v-btn variant="outlined" size="small" @click="onClickDetail(c)">
+                                詳細
                             </v-btn>
-                        </v-card-actions>
-                    </v-card>
-                </v-slide-group-item>
-            </v-slide-group>
+                            <!-- <v-btn :color="store.selectedClass?.id === c.id ? 'primary' : undefined"
+                                :variant="store.selectedClass?.id === c.id ? 'flat' : 'outlined'" size="small"
+                                @click.stop="store.setSelectedClass(c)"
+                                :aria-pressed="store.selectedClass?.id === c.id">
+                                {{ store.selectedClass?.id === c.id ? '✓ 選択中' : '選択' }}
+                            </v-btn> -->
+                        </div>
+                    </template>
+                </v-list-item>
+            </v-list>
+
             <!-- <class-card /> -->
         </template>
     </section-card>
+    <class-detail-dialog v-if="detailClass" :selected-class="detailClass" v-model="detailDialogOpen" />
 </template>
 
 <script setup lang="ts">
@@ -44,10 +50,17 @@ import { useReservationStore } from '#imports'
 const store = useReservationStore();
 
 const isSelected = (c: LessonClass) => store.selectedClass?.id === c.id
+const detailDialogOpen = ref(false);
+const detailClass = ref<LessonClass | null>(null);
 
 const filteredClasses = computed(() => {
     return store.allClasses.filter(c => c.courseId === store.selectedCourse?.id)
 })
+const onClickDetail = (c: LessonClass) => {
+    detailClass.value = c;
+    detailDialogOpen.value = true;
+}
+
 </script>
 
 <style scoped>

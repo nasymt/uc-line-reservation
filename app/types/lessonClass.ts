@@ -5,6 +5,7 @@ export interface LessonClass {
   courseId: string;
   label: string;
   duration: number; // minutes
+  description?: string;
   recommendedAge?: string;
   instructorType?: InstructorType;
   img: string;

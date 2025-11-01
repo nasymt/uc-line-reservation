@@ -3,6 +3,7 @@
     "id": "baby",
     "courseId": "baby",
     "label": "ベイビークラス",
+    "description": "親子で楽しく英語に触れ合うクラスです。",
     "duration": 40,
     "recommendedAge": "0〜2歳",
     "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/ペアクラス-1-1024x682.png"
@@ -11,6 +12,7 @@
     "id": "pair",
     "courseId": "baby",
     "label": "ペアクラス",
+    "description": "体を動かしながら楽しく英語を学ぶクラスです。",
     "duration": 60,
     "recommendedAge": "2〜4歳",
     "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-5.png"
@@ -20,6 +22,7 @@
     "courseId": "baby",
     "label": "ソロクラス",
     "duration": 60,
+    "description": "子どもたちだけで主体的に学びます。",
     "recommendedAge": "3〜6歳",
     "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-1-1024x682.png"
   },
@@ -28,6 +31,7 @@
     "courseId": "baby",
     "label": "イマージョンクラス",
     "duration": 60,
+    "description": "英語だけの環境で英語力を伸ばすクラスです。",
     "recommendedAge": "3〜6歳",
     "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-3-1536x1023.png"
   },
