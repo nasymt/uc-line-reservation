@@ -11,6 +11,8 @@ export const useReservationStore = defineStore("reservation", {
     allCourses: [] as Course[],
     allClasses: [] as LessonClass[],
     allSchedules: {} as LessonSchedulesFile,
+    recommendedCourseId: "" as string,
+    recommendedClassId: "" as string,
   }),
   actions: {
     async loadSettings() {

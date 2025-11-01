@@ -11,7 +11,8 @@
                 class="mr-2" />
             </template>
 
-            <span class="course-label">{{ course.label }}</span>
+            <span class="course-label">{{ course.label }}<span v-if="store.recommendedCourseId == course.id"
+                :style="{ color: store.selectedCourse === course ? '#fff' : '#43C0A2', fontWeight: '600' }">(あなたへのオススメ!)</span></span>
           </v-btn>
         </v-col>
       </v-row>
