@@ -13,7 +13,7 @@ export default defineNuxtPlugin(async () => {
   await liff.init({ liffId: pub.liffId })
 
   if (!liff.isLoggedIn()) {
-    await liff.login({ redirectUri: `${location.origin}/reserve` })
+    await liff.login({ redirectUri: `${location.origin}/` })
     return
   }
 
