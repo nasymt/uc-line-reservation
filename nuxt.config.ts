@@ -7,12 +7,10 @@ export default defineNuxtConfig({
   ssr: true,
   srcDir: "app/",
   runtimeConfig: {
-    supabaseServiceRole: process.env.SUPABASE_SERVICE_ROLE_KEY, // ★サーバ専用（クライアントへ出さない）
     public: {
-      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
-      supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY,
       liffId: process.env.NUXT_PUBLIC_LIFF_ID,
       loginChannelId: process.env.LINE_LOGIN_CHANNEL_ID,
+      liffRedirect: process.env.NUXT_PUBLIC_LIFF_REDIRECT,
     },
     line: {
       channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
