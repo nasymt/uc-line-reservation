@@ -1,20 +1,24 @@
 <template>
-    <reservation-course />
-    <reservation-class />
-    <reservation-date id="dateSection" ref="dateSection"/>
-    <div class="d-flex justify-center mb-16">
-        <v-btn class="my-4" :disabled="store.selectedSlot === undefined || store.selectedSlot === null" rounded color="success" size="x-large"
-            @click="showConfirmDialog = true">
-            入力内容を確認する
-        </v-btn>
-    </div>
-    <reservation-confirm-dialog v-model="showConfirmDialog" />
+    <template v-if="isReservationCompleted"><thank-you-view /></template>
+    <template v-else>
+        <reservation-course />
+        <reservation-class />
+        <reservation-date id="dateSection" ref="dateSection" />
+        <div class="d-flex justify-center mb-16">
+            <v-btn class="my-4" :disabled="store.selectedSlot === undefined || store.selectedSlot === null" rounded
+                color="success" size="x-large" @click="showConfirmDialog = true">
+                入力内容を確認する
+            </v-btn>
+        </div>
+        <reservation-confirm-dialog v-model="showConfirmDialog" @update:model="onReservationComplete" />
+    </template>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useReservationStore } from '~/stores/reservation';
 import { useGoTo } from '#imports';
+import liff from '@line/liff';
 
 defineEmits<{ (e: 'select', iso: string): void }>()
 const goTo = useGoTo();
@@ -22,6 +26,7 @@ const dateSection = ref<HTMLElement | null>(null);
 
 const store = useReservationStore();
 const showConfirmDialog = ref(false);
+const isReservationCompleted = ref(false);
 
 watch(() => store.selectedClass, (newClass) => {
     if (newClass) {
@@ -33,14 +38,31 @@ watch(() => store.selectedClass, (newClass) => {
     }
 });
 
-onMounted(() => {
+onMounted(async () => {
     store.loadSettings();
     console.log('ReservationForm mounted')
+
+    const token = liff.getIDToken() // 文字列のIDトークン
+    const { userId } = await $fetch('/api/line/session', {
+        method: 'POST',
+        body: { idToken: token }
+    })
+    console.log('LINE User ID:', userId)
+
+    // await $fetch('/api/line/push', {
+    //     method: 'POST',
+    //     body: { userId: 'Uc582ba3923d8895426cc6434e81fb651', text: 'こんにちは！' }
+    // })
+
 })
 
 watch(showConfirmDialog, (newVal) => {
     console.log('Show confirm dialog:', store.selectedSlot)
 })
+
+const onReservationComplete = () => {
+    isReservationCompleted.value = true;
+}
 </script>
 
 <style scoped>

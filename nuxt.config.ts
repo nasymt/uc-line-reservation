@@ -10,6 +10,11 @@ export default defineNuxtConfig({
     public: {
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY,
+      liffId: process.env.NUXT_PUBLIC_LIFF_ID,
+    },
+    line: {
+      channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+      channelSecret: process.env.LINE_CHANNEL_SECRET,
     },
   },
   nitro: {

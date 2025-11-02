@@ -1,7 +1,7 @@
 <template>
     <v-dialog v-model="model">
         <v-card>
-            <v-card-title class="text-h5 text-center">予約内容の確認</v-card-title>
+            <v-card-title class="text-h5 text-center mt-4">予約内容の確認</v-card-title>
             <v-card-text>
                 <v-table class="confirm-table w-100">
                     <tbody>
@@ -30,7 +30,7 @@
 
                 <v-divider class="my-4" />
                 <v-alert type="info" variant="tonal" class="mb-2">
-                    ・予約を送信した段階では確定しておらず、数日以内にスクールから連絡をいたします。
+                    予約を送信した段階では確定しておらず、数日以内にスクールから連絡をいたします。
                     この連絡をもってご予約が確定となります。
                 </v-alert>
                 <!-- チェック必須 -->
@@ -44,12 +44,12 @@
                     <div><strong>体験時間:</strong> {{ store.selectedClass?.duration }}分(目安)</div>
                 </div> -->
             </v-card-text>
-            <v-card-actions class="d-flex justify-center gap-3 flex-wrap">
+            <v-card-actions class="d-flex justify-center gap-3 flex-wrap mb-4">
                 <v-btn color="secondary" variant="flat" @click="model = false">
                     戻る
                 </v-btn>
 
-                <v-btn color="primary" variant="flat" :disabled="!agree" @click="/* 予約確定処理をここに追加 */ model = false">
+                <v-btn color="primary" variant="flat" :disabled="!agree" @click="onConfirm">
                     予約を確定する
                 </v-btn>
             </v-card-actions>
@@ -60,6 +60,13 @@
 import { useReservationStore } from '#imports';
 const model = defineModel<boolean>({ type: Boolean, required: true, default: false })
 const store = useReservationStore();
+
+const emit = defineEmits<{ (e: 'update:model'): void }>()
+
+const onConfirm = () => {
+    emit('update:model');
+    model.value = false;
+}
 
 const agree = ref(false)
 </script>
