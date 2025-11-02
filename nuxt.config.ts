@@ -17,8 +17,23 @@ export default defineNuxtConfig({
       channelSecret: process.env.LINE_CHANNEL_SECRET,
     },
   },
+  vite: {
+    server: {
+      cors: true,
+      // allowedHosts: ['bernard-unconnived-indomitably.ngrok-free.dev'],
+      allowedHosts: true,
+
+      // HMR を wss 経由で ngrok ドメインへ
+      // hmr: {
+      //   protocol: 'wss',
+      //   host: 'bernard-unconnived-indomitably.ngrok-free.dev',
+      //   port: 443
+      // },
+      fs: {strict: false}
+    }
+  },
   nitro: {
-    preset: "node",
+    preset: "vercel",
     scanDirs: ["app/server"],
     // handlers: [
     //   { route: '/api/ping', handler: '~/server/handlers/ping.ts', method: 'get' },

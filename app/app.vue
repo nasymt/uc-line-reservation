@@ -17,9 +17,6 @@
     <v-main class="grey" style="background-color: #EEE;">
       <reservation-form />
       <!-- <v-btn color="primary">asdfAA</v-btn> -->
-      <!-- <client-only>
-      <AuthForm />
-    </client-only> -->
       <!-- <NuxtRouteAnnouncer />
     <NuxtWelcome /> -->
       <!-- <v-btn :loading="loading" @click="onSignOut" variant="text">
@@ -36,23 +33,6 @@ const { $supabase } = useNuxtApp()
 const loading = ref(false)
 const msg = useState<string | null>('flash', () => null) // 任意: 画面間でメッセージ共有
 
-
-const onSignOut = async () => {
-  loading.value = true
-  try {
-    // 現在の端末のみログアウト → await $supabase.auth.signOut()
-    // すべての端末・セッションを無効化 → 下記の global
-    await $supabase.auth.signOut(/* { scope: 'global' } */)
-
-    msg.value = 'ログアウトしました'
-    await navigateTo('/')  // 任意のトップ/ログインへ
-  } catch (e: any) {
-    msg.value = e?.message ?? 'ログアウトに失敗しました'
-    console.error(e)
-  } finally {
-    loading.value = false
-  }
-}
 </script>
 
 <style scoped>
