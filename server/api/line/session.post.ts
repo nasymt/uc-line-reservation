@@ -5,6 +5,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "idToken required" });
 
   const { channelSecret } = useRuntimeConfig().line;
+  const { loginChannelId } = useRuntimeConfig().public;
 
   // LINE Loginの Verify ID token エンドポイントで検証
   const res = await $fetch("https://api.line.me/oauth2/v2.1/verify", {
@@ -12,7 +13,7 @@ export default defineEventHandler(async (event) => {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       id_token: idToken,
-      client_id: channelSecret,
+      client_id: String(loginChannelId),
     }),
   });
 
