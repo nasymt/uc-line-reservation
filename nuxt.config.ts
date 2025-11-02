@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  devServer: { host: "0.0.0.0", port: 3000 },
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   modules: ["vuetify-nuxt-module", "@pinia/nuxt"],
@@ -25,13 +26,17 @@ export default defineNuxtConfig({
       allowedHosts: true,
 
       // HMR を wss 経由で ngrok ドメインへ
-      // hmr: {
-      //   protocol: 'wss',
-      //   host: 'bernard-unconnived-indomitably.ngrok-free.dev',
-      //   port: 443
-      // },
-      fs: {strict: false}
-    }
+      hmr: {
+        protocol: "wss",
+        host: process.env.NGROK_HOST,
+        port: 443,
+        clientPort: 443,
+      },
+      fs: { strict: false },
+      origin: process.env.NGROK_HOST
+        ? `https://${process.env.NGROK_HOST}`
+        : undefined,
+    },
   },
   nitro: {
     preset: "vercel",
