@@ -1,17 +1,16 @@
 // server/api/data.get.ts
-import { readFile } from 'node:fs/promises'
-import { join, basename } from 'node:path'
-import { defineEventHandler, getQuery, createError } from 'h3'
-
-const ALLOWED = new Set(['classes.json', 'schedule.json', 'courses.json' /* 'teachers.json', ... */])
-
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
-  const raw = typeof q.file === 'string' ? q.file : ''
-  const file = basename(raw)
-  if (!ALLOWED.has(file)) {
-    throw createError({ statusCode: 404, statusMessage: 'Unknown file' })
-  }
-  const p = join(process.cwd(), 'server', 'data', file)
-  return JSON.parse(await readFile(p, 'utf8'))
+  const file = String(q.file || '').replace(/[^a-z0-9_.-]/gi, '')
+  if (!file) throw createError({ statusCode: 400, statusMessage: 'file required' })
+
+  // ~/server/data/*.json をビルド時に取り込む
+  const modules = import.meta.glob('~/server/data/*.json', { eager: true, import: 'default' })
+  const map = Object.fromEntries(
+    Object.entries(modules).map(([k, v]) => [k.split('/').pop()!, v as unknown])
+  )
+
+  const data = map[file]
+  if (!data) throw createError({ statusCode: 404, statusMessage: 'file not found' })
+  return data
 })

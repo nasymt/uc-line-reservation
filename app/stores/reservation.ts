@@ -16,9 +16,12 @@ export const useReservationStore = defineStore("reservation", {
   }),
   actions: {
     async loadSettings() {
-      this.allCourses = await $fetch("/api/data?file=courses.json");
-      this.allClasses = await $fetch("/api/data?file=classes.json");
-      this.allSchedules = await $fetch("/api/data?file=schedule.json");
+      // this.allCourses = await $fetch("/api/data?file=courses.json");
+      // this.allClasses = await $fetch("/api/data?file=classes.json");
+      // this.allSchedules = await $fetch("/api/data?file=schedule.json");
+      this.allCourses = await $fetch("/data/courses.json");
+      this.allClasses = await $fetch("/data/classes.json");
+      this.allSchedules = await $fetch("/data/schedule.json");
       console.log("Settings loaded", this.allCourses, this.allClasses);
     },
     setSelectedCourse(course: Course) {

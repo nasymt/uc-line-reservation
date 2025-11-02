@@ -1,0 +1,207 @@
+[
+  {
+    "id": "baby",
+    "courseId": "baby",
+    "label": "ベイビークラス",
+    "description": "親子で楽しく英語に触れ合うクラスです。",
+    "duration": 40,
+    "recommendedAge": "0〜2歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/ペアクラス-1-1024x682.png"
+  },
+  {
+    "id": "pair",
+    "courseId": "baby",
+    "label": "ペアクラス",
+    "description": "体を動かしながら楽しく英語を学ぶクラスです。",
+    "duration": 60,
+    "recommendedAge": "2〜4歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-5.png"
+  },
+  {
+    "id": "solo",
+    "courseId": "baby",
+    "label": "ソロクラス",
+    "duration": 60,
+    "description": "子どもたちだけで主体的に学びます。",
+    "recommendedAge": "3〜6歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-1-1024x682.png"
+  },
+  {
+    "id": "immersion",
+    "courseId": "baby",
+    "label": "イマージョンクラス",
+    "duration": 60,
+    "description": "英語だけの環境で英語力を伸ばすクラスです。",
+    "recommendedAge": "3〜6歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-3-1536x1023.png"
+  },
+  {
+    "id": "ak1",
+    "courseId": "kids",
+    "label": "AK1クラス",
+    "duration": 90,
+    "recommendedAge": "6〜12歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-6.png"
+  },
+  {
+    "id": "ak2",
+    "courseId": "kids",
+    "label": "AK2クラス",
+    "duration": 90,
+    "recommendedAge": "6〜12歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-6.png"
+  },
+  {
+    "id": "ak3",
+    "courseId": "kids",
+    "label": "AK3クラス",
+    "duration": 90,
+    "recommendedAge": "6〜12歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-6.png"
+  },
+  {
+    "id": "ak4",
+    "courseId": "kids",
+    "label": "AK4クラス",
+    "duration": 90,
+    "recommendedAge": "6〜12歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-6.png"
+  },
+  {
+    "id": "ak5",
+    "courseId": "kids",
+    "label": "AK5クラス",
+    "duration": 90,
+    "recommendedAge": "6〜12歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-6.png"
+  },
+  {
+    "id": "ak6",
+    "courseId": "kids",
+    "label": "AK6クラス",
+    "duration": 90,
+    "recommendedAge": "6〜12歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-6.png"
+  },
+  {
+    "id": "ak7",
+    "courseId": "kids",
+    "label": "AK7クラス",
+    "duration": 90,
+    "recommendedAge": "6〜12歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-6.png"
+  },
+  {
+    "id": "ak8",
+    "courseId": "kids",
+    "label": "AK8クラス",
+    "duration": 90,
+    "recommendedAge": "6〜12歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-6.png"
+  },
+  {
+    "id": "teenConversation1",
+    "courseId": "teen",
+    "label": "ティーン会話1クラス",
+    "duration": 40,
+    "recommendedAge": "12〜18歳",
+    "instructorType": "native",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-2.png"
+  },
+  {
+    "id": "teenConversation2",
+    "courseId": "teen",
+    "label": "ティーン会話2クラス",
+    "duration": 40,
+    "recommendedAge": "12〜18歳",
+    "instructorType": "native",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-2.png"
+  },
+  {
+    "id": "teenConversation3",
+    "courseId": "teen",
+    "label": "ティーン会話3クラス",
+    "duration": 40,
+    "recommendedAge": "12〜18歳",
+    "instructorType": "native",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-2.png"
+  },
+  {
+    "id": "teenConversation4",
+    "courseId": "teen",
+    "label": "ティーン会話4クラス",
+    "duration": 40,
+    "recommendedAge": "12〜18歳",
+    "instructorType": "native",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-2.png"
+  },
+  {
+    "id": "teenConversation5",
+    "courseId": "teen",
+    "label": "ティーン会話5クラス",
+    "duration": 40,
+    "recommendedAge": "12〜18歳",
+    "instructorType": "native",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-2.png"
+  },
+  {
+    "id": "teenConversation6",
+    "courseId": "teen",
+    "label": "ティーン会話6クラス",
+    "duration": 40,
+    "recommendedAge": "12〜18歳",
+    "instructorType": "native",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-2.png"
+  },
+  {
+    "id": "teenConversation7",
+    "courseId": "teen",
+    "label": "ティーン会話7クラス",
+    "duration": 40,
+    "recommendedAge": "12〜18歳",
+    "instructorType": "native",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-2.png"
+  },
+  {
+    "id": "teenConversation8",
+    "courseId": "teen",
+    "label": "ティーン会話8クラス",
+    "duration": 40,
+    "recommendedAge": "12〜18歳",
+    "instructorType": "native",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-2.png"
+  },
+  {
+    "id": "teenGrammar",
+    "courseId": "teen",
+    "label": "ティーン文法クラス",
+    "duration": 40,
+    "recommendedAge": "12〜18歳",
+    "instructorType": "jp",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-1.png"
+  },
+  {
+    "id": "teenGeneral",
+    "courseId": "teen",
+    "label": "ティーン総合クラス",
+    "duration": 80,
+    "recommendedAge": "12〜18歳",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-3.png"
+  },
+  {
+    "id": "weekly",
+    "courseId": "adult",
+    "label": "ウィークリークラス",
+    "duration": 40,
+    "instructorType": "native",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/03/image-6.png"
+  },
+  {
+    "id": "eiken",
+    "courseId": "eiken",
+    "label": "英検クラス",
+    "duration": 90,
+    "instructorType": "jp",
+    "img": "https://uc.kyoshin.co.jp/wp-content/uploads/sites/6/2024/02/image-10.png"
+  }
+]

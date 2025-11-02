@@ -14,5 +14,9 @@
     {
       "path": "./.nuxt/tsconfig.node.json"
     }
-  ]
+  ],
+  "compilerOptions": {
+    "types": ["vite/client", "node"],
+    "resolveJsonModule": true
+  }
 }
