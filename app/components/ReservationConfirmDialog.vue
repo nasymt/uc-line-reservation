@@ -154,34 +154,53 @@ async function send() {
     });
 }
 
-async function getFreshIdTokenOrRelogin(graceSec = 30): Promise<{ idToken: string; exp: number; aud: string; sub: string }> {
-    const start = Date.now()
-    let tok: string | null = null
-    let decoded: any = null
+// リトライしてIDトークンを取るやつ
+async function getFreshIdTokenOrRelogin(options?: {
+  maxRetry?: number
+  intervalMs?: number
+  graceSec?: number
+}): Promise<{ idToken: string; exp: number; aud: string; sub: string }> {
+  const maxRetry = options?.maxRetry ?? 10      // 最大10回トライ
+  const intervalMs = options?.intervalMs ?? 150 // 150ms間隔
+  const graceSec = options?.graceSec ?? 30
 
-    while (Date.now() - start < 2000) { // 最大2秒待つ
-        tok = liff.getIDToken?.() ?? null
-        decoded = liff.getDecodedIDToken?.() ?? null
-        if (tok && decoded) break
-        await new Promise((r) => setTimeout(r, 120))
-    }
+  let tok: string | null = null
+  let decoded: any = null
 
-    if (!tok || !decoded) {
-        liff.login({ redirectUri: location.href })
-        return Promise.reject(new Error('LOGIN_REDIRECT'))
-    }
+  // ① まずは何回か頑張って取る
+  for (let i = 0; i < maxRetry; i++) {
+    tok = liff.getIDToken?.() ?? null
+    decoded = liff.getDecodedIDToken?.() ?? null
+    if (tok && decoded) break
+    await new Promise((r) => setTimeout(r, intervalMs))
+  }
 
-    const now = Math.floor(Date.now() / 1000)
-    const remain = (decoded.exp ?? 0) - now
-    console.log('[LIFF] aud=', decoded.aud, 'sub=', decoded.sub, 'remain=', remain)
+  // ② それでもダメなら本当にログインが必要な状態
+  if (!tok || !decoded) {
+    // ここでログインに飛ぶ
+    liff.login({ redirectUri: location.href })
+    // 呼び出し側に「今ログイン飛ばしただけ」と知らせる
+    throw new Error('LOGIN_REDIRECT')
+  }
 
-    if (remain <= graceSec) {
-        console.warn('[LIFF] token expiring/expired → re-login')
-        liff.login({ redirectUri: location.href })
-        throw new Error('redirecting to login')
-    }
-    return { idToken: tok, exp: decoded.exp, aud: decoded.aud, sub: decoded.sub }
+  // ③ 有効期限チェック
+  const now = Math.floor(Date.now() / 1000)
+  const remain = (decoded.exp ?? 0) - now
+  console.log('[LIFF] aud=', decoded.aud, 'sub=', decoded.sub, 'remain=', remain)
+
+  if (remain <= graceSec) {
+    liff.login({ redirectUri: location.href })
+    throw new Error('LOGIN_REDIRECT')
+  }
+
+  return {
+    idToken: tok,
+    exp: decoded.exp,
+    aud: decoded.aud,
+    sub: decoded.sub,
+  }
 }
+
 
 const agree = ref(false)
 </script>
