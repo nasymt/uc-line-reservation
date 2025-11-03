@@ -10,29 +10,14 @@
       </v-toolbar-title>
     </v-app-bar>
 
-    <!-- <nuxt-layout>
-      <nuxt-page />
-    </nuxt-layout> -->
-
     <v-main class="grey" style="background-color: #EEE;">
       <reservation-form />
-      <!-- <v-btn color="primary">asdfAA</v-btn> -->
-      <!-- <NuxtRouteAnnouncer />
-    <NuxtWelcome /> -->
-      <!-- <v-btn :loading="loading" @click="onSignOut" variant="text">
-        ログアウト
-      </v-btn> -->
     </v-main>
-
   </v-layout>
 
 </template>
 
 <script setup lang="ts">
-const { $supabase } = useNuxtApp()
-const loading = ref(false)
-const msg = useState<string | null>('flash', () => null) // 任意: 画面間でメッセージ共有
-
 </script>
 
 <style scoped>
@@ -46,9 +31,4 @@ const msg = useState<string | null>('flash', () => null) // 任意: 画面間で
   /* クリックを下の要素に通す（必要なら） */
 }
 
-/* 念のため、影を完全に無効化しておきたい場合は以下も可
-.v-app-bar {
-  box-shadow: none !important;
-}
-*/
 </style>

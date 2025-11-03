@@ -1,14 +1,6 @@
 <template>
     <template v-if="isReservationCompleted"><thank-you-view /></template>
     <template v-else>
-        <v-card class="pa-4" elevation="1">
-            <div class="text-subtitle-1 mb-2">テスト送信</div>
-            <v-text-field v-model="text" label="本文" placeholder="予約ありがとうございます！" />
-            <v-btn :loading="sending" :disabled="!text" color="primary" @click="send">
-                このユーザーに送信
-            </v-btn>
-            <div class="mt-2 text-caption" v-if="status">{{ status }}</div>
-        </v-card>
         <reservation-course />
         <reservation-class />
         <reservation-date id="dateSection" ref="dateSection" />
@@ -26,7 +18,6 @@
 import { ref, computed } from 'vue'
 import { useReservationStore } from '~/stores/reservation';
 import { useGoTo } from '#imports';
-import liff from '@line/liff';
 
 defineEmits<{ (e: 'select', iso: string): void }>()
 const goTo = useGoTo();
@@ -49,29 +40,7 @@ watch(() => store.selectedClass, (newClass) => {
 onMounted(async () => {
     store.loadSettings();
     console.log('ReservationForm mounted')
-
-    // const token = liff.getIDToken() // 文字列のIDトークン
-    // const { userId } = await $fetch('/api/line/session', {
-    //     method: 'POST',
-    //     body: { idToken: token }
-    // })
-    // console.log('LINE User ID:', userId)
-
-    // await $fetch('/api/line/push', {
-    //     method: 'POST',
-    //     body: { userId: 'Uc582ba3923d8895426cc6434e81fb651', text: 'こんにちは！' }
-    // })
-
 })
-
-const checkUserId = async () => {
-    const token = liff.getIDToken() // 文字列のIDトークン
-    // const { userId } = await $fetch('/api/line/session', {
-    //     method: 'POST',
-    //     body: { idToken: token }
-    // })
-    console.log('LINE User ID:', token)
-}
 
 watch(showConfirmDialog, (newVal) => {
     console.log('Show confirm dialog:', store.selectedSlot)
@@ -79,74 +48,6 @@ watch(showConfirmDialog, (newVal) => {
 
 const onReservationComplete = () => {
     isReservationCompleted.value = true;
-}
-
-const text = ref('予約ありがとうございます！このままトークでご連絡ください。')
-const sending = ref(false)
-const status = ref('')
-const lastLog = ref('')
-
-async function send() {
-  sending.value = true
-  lastLog.value = ''
-  try {
-    const { idToken, aud, sub, exp } = await getFreshIdTokenOrRelogin()
-
-    const resp = await fetch('/api/line/push', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ idToken, text: text.value }),
-    })
-    const data = await resp.json().catch(() => null)
-
-    console.log('[push] status=', resp.status, 'body=', data, { aud, sub, exp })
-    lastLog.value = JSON.stringify({ status: resp.status, body: data }, null, 2)
-  } catch (e: any) {
-    // ここで見えている "InvalidCharacterError" は以前の atob() 由来でした
-    console.error('[push] client-error', e)
-    lastLog.value = `client-error: ${e?.message || e}`
-  } finally {
-    sending.value = false
-  }
-}
-
-async function waitForIdToken(timeoutMs = 8000) {
-    const t0 = Date.now()
-    for (; ;) {
-        const tok = liff.getIDToken?.()
-        if (tok) return tok
-        if (Date.now() - t0 > timeoutMs) throw new Error('LIFFのIDトークンが取得できません（ログイン/設定を確認）')
-        await new Promise(r => setTimeout(r, 120))
-    }
-}
-
-function decodeJwt<T = any>(jwt: string): T {
-    const [, payload] = jwt.split('.')
-    if (!payload) {
-        throw new Error('Invalid JWT: missing payload')
-    }
-    return JSON.parse(atob(payload))
-}
-
-async function getFreshIdTokenOrRelogin(graceSec = 30): Promise<{ idToken: string; exp: number; aud: string; sub: string }> {
-  const tok = liff.getIDToken?.()
-  const decoded: any = liff.getDecodedIDToken?.() // ← これを信頼して使う
-
-  if (!tok || !decoded) {
-    liff.login({ redirectUri: location.href })
-    throw new Error('redirecting to login')
-  }
-
-  const now = Math.floor(Date.now() / 1000)
-  const remain = (decoded.exp ?? 0) - now
-  console.log('[LIFF] aud=', decoded.aud, 'sub=', decoded.sub, 'remain=', remain)
-
-  if (remain <= graceSec) {
-    console.warn('[LIFF] token expiring/expired → re-login')
-    liff.login({ redirectUri: location.href })
-    throw new Error('redirecting to login')
-  }
-  return { idToken: tok, exp: decoded.exp, aud: decoded.aud, sub: decoded.sub }
 }
 
 </script>
