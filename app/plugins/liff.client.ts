@@ -8,6 +8,8 @@ export default defineNuxtPlugin((nuxtApp) => {
   const liffId = pub.liffId
   const LOG_ENDPOINT = 'https://bernard-unconnived-indomitably.ngrok-free.dev'
 
+  const liffReady = useState<boolean>('__liff_ready__', () => false)
+
   async function logRemote(tag: string, data: any) {
     try {
       await fetch(LOG_ENDPOINT, {
@@ -15,17 +17,19 @@ export default defineNuxtPlugin((nuxtApp) => {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ tag, data }),
       })
-    } catch (e) {
-      console.warn('[logRemote:init] failed', e)
+    } catch (_) {
+      // ログが死んでも本処理は止めない
     }
   }
 
   nuxtApp.hook('app:mounted', async () => {
     if (!liffId) {
-      await logRemote('liff-init-missing-id', {
+      await logRemote('liff-init-error', {
         ts: new Date().toISOString(),
-        msg: 'runtimeConfig.public.liffId is empty',
+        message: 'liffId is empty in runtimeConfig',
+        liffId,
       })
+      liffReady.value = false
       return
     }
 
@@ -33,6 +37,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       await liff.init({ liffId })
       const idToken = liff.getIDToken?.()
       const decoded = liff.getDecodedIDToken?.()
+
       await logRemote('liff-init-success', {
         ts: new Date().toISOString(),
         liffId,
@@ -40,11 +45,15 @@ export default defineNuxtPlugin((nuxtApp) => {
         decoded,
       })
 
-      // 初回にまだトークンが無かったらここで一回だけログイン飛ばす
+      // ここまで来たら「送信してOK」
+      liffReady.value = true
+
+      // もし初回でトークンなかったら、この場でログインに飛ばすこともできる
       if (!idToken || !decoded) {
         await logRemote('liff-init-login', {
           ts: new Date().toISOString(),
-          reason: 'no idToken at init',
+          reason: 'init success but no idToken',
+          liffId,
         })
         await liff.login({ redirectUri: location.href })
       }
@@ -52,7 +61,10 @@ export default defineNuxtPlugin((nuxtApp) => {
       await logRemote('liff-init-error', {
         ts: new Date().toISOString(),
         message: e?.message || String(e),
+        liffTried: liffId,            // ←ここをログするのが重要
+        location: location.href,
       })
+      liffReady.value = false
     }
   })
 })

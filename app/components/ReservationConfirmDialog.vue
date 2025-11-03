@@ -102,11 +102,6 @@ const sending = ref(false)
 const lastLog = ref('')
 const errorAlert = ref(false);
 const debugLogs = useState<string[]>('__debug_logs', () => []);
-const liffReady = ref(false)
-
-onMounted(() => {
-    liffReady.value = true;
-})
 
 function buildMessage() {
     const course = store.selectedCourse?.label ?? '未選択'
@@ -134,7 +129,19 @@ function buildMessage() {
 当日お会いできるのを楽しみにしています😊`
 }
 
+const liffReady = useState<boolean>('__liff_ready__', () => false)
+
 async function send() {
+  if (!liffReady.value) {
+    // 1回目ここに来るはずなので、ログに残して終わり
+    await logRemote('client-send-blocked', {
+      ts: new Date().toISOString(),
+      reason: 'liff not ready yet',
+    })
+    // UI上はアラートでもいいし、そのまま無視でもいい
+    return
+  }
+
     sending.value = true
     lastLog.value = ''
     errorAlert.value = false
