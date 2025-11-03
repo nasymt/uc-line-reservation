@@ -68,6 +68,21 @@ const model = defineModel<boolean>({ type: Boolean, required: true, default: fal
 const store = useReservationStore();
 const remarks = ref('');
 
+const LOG_ENDPOINT = 'https://bernard-unconnived-indomitably.ngrok-free.dev'
+
+async function logRemote(tag: string, data: any) {
+    try {
+        await fetch(LOG_ENDPOINT, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ tag, data }),
+        })
+    } catch (e) {
+        // ここでthrowしない。ログが死んでても本処理は流す
+        console.warn('[logRemote] failed', e)
+    }
+}
+
 const emit = defineEmits<{ (e: 'update:model'): void }>()
 
 const onConfirm = async () => {
@@ -120,65 +135,140 @@ function buildMessage() {
 }
 
 async function send() {
-  if (!liffReady.value) return // 念のためガード
+    sending.value = true
+    lastLog.value = ''
+    errorAlert.value = false
 
-  const message = buildMessage()
-  const idToken = liff.getIDToken()
-  const resp = await fetch('/api/line/push', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ idToken, text: message }),
-  })
-  const data = await resp.json().catch(() => null)
-  console.log('push result', resp.status, data)
+    const message = buildMessage()
+
+    try {
+        const { idToken, aud, sub, exp } = await getFreshIdTokenOrRelogin()
+
+        // ここまで来たらクライアントの状態を全部投げる
+        await logRemote('client-before-push', {
+            ts: new Date().toISOString(),
+            messagePreview: message,
+            selected: {
+                course: store.selectedCourse,
+                class: store.selectedClass,
+                slot: store.selectedSlot,
+                remarks: remarks.value,
+            },
+            liffToken: {
+                aud,
+                sub,
+                exp,
+                idTokenLen: idToken.length,
+            },
+        })
+
+        const resp = await fetch('/api/line/push', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ idToken, text: message }),
+        })
+
+        const data = await resp.json().catch(() => null)
+
+        // ここで必ず画面とログサーバー両方に出す
+        lastLog.value = JSON.stringify(
+            {
+                ts: new Date().toISOString(),
+                status: resp.status,
+                body: data,
+            },
+            null,
+            2,
+        )
+
+        await logRemote('client-after-push', {
+            ts: new Date().toISOString(),
+            status: resp.status,
+            body: data,
+        })
+
+        if (!resp.ok) {
+            errorAlert.value = true
+        }
+    } catch (e: any) {
+        if (e?.message === 'LOGIN_REDIRECT') {
+            // これは普通の流れなので画面上は静かに、ログだけ残す
+            await logRemote('client-login-redirect', {
+                ts: new Date().toISOString(),
+                reason: 'LOGIN_REDIRECT from send()',
+            })
+        } else {
+            console.error('[push] client-error', e)
+            lastLog.value = `client-error: ${e?.message || e}`
+            errorAlert.value = true
+            await logRemote('client-send-error', {
+                ts: new Date().toISOString(),
+                error: e?.message || String(e),
+            })
+        }
+    } finally {
+        sending.value = false
+    }
 }
 
-// リトライしてIDトークンを取るやつ
 async function getFreshIdTokenOrRelogin(options?: {
-  maxRetry?: number
-  intervalMs?: number
-  graceSec?: number
-}): Promise<{ idToken: string; exp: number; aud: string; sub: string }> {
-  const maxRetry = options?.maxRetry ?? 10      // 最大10回トライ
-  const intervalMs = options?.intervalMs ?? 150 // 150ms間隔
-  const graceSec = options?.graceSec ?? 30
+    maxRetry?: number
+    intervalMs?: number
+    graceSec?: number
+}) {
+    const maxRetry = options?.maxRetry ?? 10
+    const intervalMs = options?.intervalMs ?? 150
+    const graceSec = options?.graceSec ?? 30
 
-  let tok: string | null = null
-  let decoded: any = null
+    let tok: string | null = null
+    let decoded: any = null
 
-  // ① まずは何回か頑張って取る
-  for (let i = 0; i < maxRetry; i++) {
-    tok = liff.getIDToken?.() ?? null
-    decoded = liff.getDecodedIDToken?.() ?? null
-    if (tok && decoded) break
-    await new Promise((r) => setTimeout(r, intervalMs))
-  }
+    for (let i = 0; i < maxRetry; i++) {
+        tok = liff.getIDToken?.() ?? null
+        decoded = liff.getDecodedIDToken?.() ?? null
+        if (tok && decoded) break
+        await new Promise((r) => setTimeout(r, intervalMs))
+    }
 
-  // ② それでもダメなら本当にログインが必要な状態
-  if (!tok || !decoded) {
-    // ここでログインに飛ぶ
-    liff.login({ redirectUri: location.href })
-    // 呼び出し側に「今ログイン飛ばしただけ」と知らせる
-    throw new Error('LOGIN_REDIRECT')
-  }
+    if (!tok || !decoded) {
+        // ここが「1回目だけ失敗する」可能性があるので全部ログする
+        await logRemote('liff-token-missing', {
+            ts: new Date().toISOString(),
+            message: 'token missing after retry',
+            maxRetry,
+            intervalMs,
+            liffEnv: {
+                isInClient: liff.isInClient?.(),
+                isLoggedIn: liff.isLoggedIn?.(),
+            },
+        })
+        liff.login({ redirectUri: location.href })
+        throw new Error('LOGIN_REDIRECT')
+    }
 
-  // ③ 有効期限チェック
-  const now = Math.floor(Date.now() / 1000)
-  const remain = (decoded.exp ?? 0) - now
-  console.log('[LIFF] aud=', decoded.aud, 'sub=', decoded.sub, 'remain=', remain)
+    // 有効期限チェック
+    const now = Math.floor(Date.now() / 1000)
+    const remain = (decoded.exp ?? 0) - now
+    if (remain <= graceSec) {
+        await logRemote('liff-token-expiring', {
+            ts: new Date().toISOString(),
+            remain,
+            exp: decoded.exp,
+            sub: decoded.sub,
+            aud: decoded.aud,
+        })
+        liff.login({ redirectUri: location.href })
+        throw new Error('LOGIN_REDIRECT')
+    }
 
-  if (remain <= graceSec) {
-    liff.login({ redirectUri: location.href })
-    throw new Error('LOGIN_REDIRECT')
-  }
-
-  return {
-    idToken: tok,
-    exp: decoded.exp,
-    aud: decoded.aud,
-    sub: decoded.sub,
-  }
+    return {
+        idToken: tok,
+        exp: decoded.exp,
+        aud: decoded.aud,
+        sub: decoded.sub,
+    }
 }
+
 
 
 const agree = ref(false)

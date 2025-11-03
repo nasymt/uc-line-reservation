@@ -2,36 +2,57 @@
 import liff from '@line/liff'
 
 export default defineNuxtPlugin((nuxtApp) => {
-  // ① SSRでは絶対に動かさない
   if (!import.meta.client) return
 
   const { public: pub } = useRuntimeConfig()
-  const liffId = pub.liffId  // nuxt.config.ts で NUXT_PUBLIC_LIFF_ID を入れてるやつ
+  const liffId = pub.liffId
+  const LOG_ENDPOINT = 'https://bernard-unconnived-indomitably.ngrok-free.dev'
 
-  // ② LIFF IDが無ければ何もしない（本番で消し忘れてもここで止まる）
-  if (!liffId) {
-    console.warn('[LIFF] no liffId in runtimeConfig.public.liffId')
-    return
+  async function logRemote(tag: string, data: any) {
+    try {
+      await fetch(LOG_ENDPOINT, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tag, data }),
+      })
+    } catch (e) {
+      console.warn('[logRemote:init] failed', e)
+    }
   }
 
-  // ③ 実行は mountedタイミングで。起動時500を防ぐため try/catch で囲む
   nuxtApp.hook('app:mounted', async () => {
+    if (!liffId) {
+      await logRemote('liff-init-missing-id', {
+        ts: new Date().toISOString(),
+        msg: 'runtimeConfig.public.liffId is empty',
+      })
+      return
+    }
+
     try {
       await liff.init({ liffId })
-      // ここまで来たら「このLIFFでIDトークンが取れる状態か」を確認
       const idToken = liff.getIDToken?.()
       const decoded = liff.getDecodedIDToken?.()
-      console.log('[LIFF] init ok', { hasIdToken: !!idToken, sub: decoded?.sub, aud: decoded?.aud })
+      await logRemote('liff-init-success', {
+        ts: new Date().toISOString(),
+        liffId,
+        hasIdToken: !!idToken,
+        decoded,
+      })
 
-      // 初回だけログインしておきたい場合はここでやる
+      // 初回にまだトークンが無かったらここで一回だけログイン飛ばす
       if (!idToken || !decoded) {
+        await logRemote('liff-init-login', {
+          ts: new Date().toISOString(),
+          reason: 'no idToken at init',
+        })
         await liff.login({ redirectUri: location.href })
       }
     } catch (e: any) {
-      // ここで握っておくと 500 にならない
-      console.error('[LIFF] init failed', e?.message || e)
-      // ついでに画面に出したいなら window に残す
-      ;(window as any).__LIFF_ERROR__ = e?.message || String(e)
+      await logRemote('liff-init-error', {
+        ts: new Date().toISOString(),
+        message: e?.message || String(e),
+      })
     }
   })
 })

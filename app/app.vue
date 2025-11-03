@@ -11,7 +11,7 @@
     </v-app-bar>
 
     <v-main class="grey" style="background-color: #EEE;">
-      <global-loading />
+      <!-- <global-loading /> -->
       <reservation-form />
     </v-main>
   </v-layout>
