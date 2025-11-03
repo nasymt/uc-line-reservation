@@ -12,21 +12,28 @@ async function waitFor<T>(fn: () => T | null | undefined | false, ms = 8000, ste
   }
 }
 
-/** リダイレクト直後の二重実行/多重API叩きを防ぐフラグ */
-function getOnceFlag(key: string) {
+/** ログイン多重発火を防ぐためのガード(同タブ内で有効) */
+function guard(key: string, ttlMs: number) {
   return {
-    get: () => sessionStorage.getItem(key) === '1',
-    set: () => sessionStorage.setItem(key, '1'),
-    clear: () => sessionStorage.removeItem(key),
+    recently() {
+      const s = sessionStorage.getItem(key)
+      if (!s) return false
+      const ts = Number(s)
+      return Number.isFinite(ts) && Date.now() - ts < ttlMs
+    },
+    ping() { sessionStorage.setItem(key, String(Date.now())) },
+    clear() { sessionStorage.removeItem(key) }
   }
 }
 
 export default defineNuxtPlugin(async () => {
   const { public: pub } = useRuntimeConfig()
-  const onceSession = getOnceFlag('__liff_session_called')
-  const onceRelogin  = getOnceFlag('__liff_relogin_once')
 
-  // 0) 画面が非表示（visibility:hidden）中は何もしない → 表示になってから実行
+  const loginGuard = guard('__liff_login_guard', 15_000)    // 15秒以内は再loginしない
+  const sessionOnce = guard('__liff_session_called', 60_000) // 1分以内にsessionを1回だけ
+  const reloginOnce = guard('__liff_relogin_once', 60_000)   // 期限切れ時の再loginは1回だけ
+
+  // 0) タブが非表示なら見えるまで待つ（Safari復帰直後の競合対策）
   if (document.visibilityState === 'hidden') {
     await new Promise<void>(resolve => {
       const onv = () => {
@@ -39,7 +46,7 @@ export default defineNuxtPlugin(async () => {
     })
   }
 
-  // 1) LIFF 初期化（エンドポイントURL配下で）
+  // 1) init（エンドポイントURL配下で）
   try {
     await liff.init({ liffId: pub.liffId })
   } catch (e) {
@@ -47,19 +54,29 @@ export default defineNuxtPlugin(async () => {
     return
   }
 
-  const inClient = (liff as any).getEnvironment?.()?.isInClient ?? false
+  const inClient = liff.isInClient() ?? false
 
-  // 2) いまのURLのクエリを退避（ログイン往復で落ちるのを防ぐ保険）
+  // 2) クエリ退避（往復で落ちる事故の保険）
   const qs = location.search.slice(1)
   if (qs) sessionStorage.setItem('__saved_qs', qs)
 
-  // 3) 外部ブラウザのみ login（LIFF内は自動ログイン）
+  // 3) 直前に LINE から戻ったっぽいか？（liff.state / code / state を検知）
+  const sp = new URLSearchParams(location.search)
+  const justCameBack = sp.has('liff.state') || sp.has('code') || sp.has('state')
+
+  // 4) 外部ブラウザのみ login を呼ぶ
   if (!inClient && !liff.isLoggedIn()) {
-    liff.login({ redirectUri: location.href })
-    return
+    if (!loginGuard.recently() && !justCameBack) {
+      // 直近にloginしておらず、今が“復帰直後”でもない → login
+      loginGuard.ping()
+      liff.login({ redirectUri: location.href })
+      return
+    } else {
+      console.warn('[LIFF] suppress login to avoid loop (recently or justCameBack)')
+    }
   }
 
-  // 4) 復帰後：クエリが消えていたら復元（保険）
+  // 5) 復帰後：クエリが消えていたら復元
   if (!location.search && sessionStorage.getItem('__saved_qs')) {
     const url = new URL(location.href)
     const saved = new URLSearchParams(sessionStorage.getItem('__saved_qs')!)
@@ -68,8 +85,14 @@ export default defineNuxtPlugin(async () => {
     history.replaceState(null, '', url.toString())
   }
 
-  // 5) IDトークン/decoded を“準備できるまで”待つ
-  await waitFor(() => liff.getIDToken?.())
+  // 6) IDトークン準備を待つ
+  try {
+    await waitFor(() => liff.getIDToken?.())
+  } catch {
+    console.warn('[LIFF] idToken timeout; do not force relogin to avoid loop')
+    return
+  }
+
   const getFresh = () => {
     const tok = liff.getIDToken()!
     const dec: any = liff.getDecodedIDToken?.()
@@ -77,21 +100,23 @@ export default defineNuxtPlugin(async () => {
     const exp = dec?.exp ?? 0
     return { tok, dec, now, exp, remain: exp - now }
   }
-  let { tok: idToken, dec: decoded, remain } = getFresh()
 
-  // 6) 期限が切れてる/近い → 1回だけ強制リログインして更新（無限ループ防止）
-  if (remain <= 30 && !onceRelogin.get()) {
+  let { tok: idToken, dec: decoded, remain } = getFresh()
+  console.log('[LIFF] aud=', decoded?.aud, 'sub=', decoded?.sub, 'remain=', remain)
+
+  // 7) 期限切れ/直前 → 1回だけ再ログイン（無限ループ防止）
+  if (remain <= 30 && !reloginOnce.recently()) {
     console.warn('[LIFF] token expiring/expired → re-login once')
-    onceRelogin.set()
+    reloginOnce.ping()
     liff.login({ redirectUri: location.href })
     return
   }
-  // リフレッシュ後の2周目でここに来たらフラグをクリア
-  onceRelogin.clear()
+  // ここに来た＝使えるトークンがある
+  reloginOnce.clear()
 
-  // 7) /api/line/session は**1回だけ**叩く（リダイレクト直後の多重呼び出しを防ぐ）
-  if (!onceSession.get()) {
-    onceSession.set()
+  // 8) /api/line/session は 1回だけ
+  if (!sessionOnce.recently()) {
+    sessionOnce.ping()
     try {
       const resp = await fetch('/api/line/session', {
         method: 'POST',
@@ -100,19 +125,13 @@ export default defineNuxtPlugin(async () => {
       })
       const data = await resp.json().catch(() => null)
       console.log('[LIFF] /api/line/session', resp.status, data)
+
+      // 失敗しても すぐ再login しない（guard が抑止）
       if (!resp.ok) {
-        // 期限切れ等で落ちたら1回だけ再ログイン
-        if (!onceRelogin.get()) {
-          console.warn('[LIFF] session verify failed → re-login once')
-          onceRelogin.set()
-          liff.login({ redirectUri: location.href })
-          return
-        }
+        console.warn('[LIFF] session verify failed; guard prevents immediate relogin')
       }
     } catch (e) {
       console.error('[LIFF] session call failed', e)
     }
   }
-
-  // 以降、あなたの通常初期化処理…
 })
