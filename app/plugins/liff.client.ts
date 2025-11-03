@@ -1,23 +1,37 @@
 // app/plugins/liff.client.ts
 import liff from '@line/liff'
 
-export default defineNuxtPlugin(async () => {
+export default defineNuxtPlugin((nuxtApp) => {
+  // ① SSRでは絶対に動かさない
+  if (!import.meta.client) return
+
   const { public: pub } = useRuntimeConfig()
+  const liffId = pub.liffId  // nuxt.config.ts で NUXT_PUBLIC_LIFF_ID を入れてるやつ
 
-  // 1. 初期化
-  await liff.init({ liffId: pub.liffId })
-
-  // 2. IDトークンをもう持ってるかチェック
-  const idToken = liff.getIDToken?.()
-  const decoded = liff.getDecodedIDToken?.()
-
-  // 3. なかったら「いま」ログインして返ってきてもらう
-  if (!idToken || !decoded) {
-    // ここで一回だけLINE側に行く。LINEアプリ内ならID/PW画面じゃなくてそのまま戻ってくるはず。
-    await liff.login({ redirectUri: location.href })
+  // ② LIFF IDが無ければ何もしない（本番で消し忘れてもここで止まる）
+  if (!liffId) {
+    console.warn('[LIFF] no liffId in runtimeConfig.public.liffId')
     return
   }
 
-  // ここに来てる時点で「このLIFFでIDトークンが取れる状態」になってる
-  console.log('[LIFF ready]', decoded?.sub, decoded?.aud)
+  // ③ 実行は mountedタイミングで。起動時500を防ぐため try/catch で囲む
+  nuxtApp.hook('app:mounted', async () => {
+    try {
+      await liff.init({ liffId })
+      // ここまで来たら「このLIFFでIDトークンが取れる状態か」を確認
+      const idToken = liff.getIDToken?.()
+      const decoded = liff.getDecodedIDToken?.()
+      console.log('[LIFF] init ok', { hasIdToken: !!idToken, sub: decoded?.sub, aud: decoded?.aud })
+
+      // 初回だけログインしておきたい場合はここでやる
+      if (!idToken || !decoded) {
+        await liff.login({ redirectUri: location.href })
+      }
+    } catch (e: any) {
+      // ここで握っておくと 500 にならない
+      console.error('[LIFF] init failed', e?.message || e)
+      // ついでに画面に出したいなら window に残す
+      ;(window as any).__LIFF_ERROR__ = e?.message || String(e)
+    }
+  })
 })
