@@ -82,37 +82,51 @@ const onConfirm = async () => {
 }
 
 // const text= ref(`ご予約ありがとうございます！`);
-const text = ref(`ご予約ありがとうございます！🎉
-下記の内容で受付いたしました👇
-
-コース：${store.selectedCourse?.label}
-クラス：${store.selectedClass?.label ?? '未選択'}
-日付　：${store.selectedSlot?.date.replace(/-/g, '/') ?? '未選択'}
-時間　：${store.selectedSlot?.timeslot.time ?? '未選択'}
-体験時間：${store.selectedClass?.duration}分（目安）
-備考　：${remarks.value || 'なし'}
-
-ご変更があればこのトークにご返信ください。
-当日お会いできるのを楽しみにしています😊`)
 const sending = ref(false)
 // const status = ref('')
 const lastLog = ref('')
 const errorAlert = ref(false);
 const debugLogs = useState<string[]>('__debug_logs', () => []);
 
-async function send() {
+function buildMessage() {
+    const course = store.selectedCourse?.label ?? '未選択'
+    const klass = store.selectedClass?.label ?? '未選択'
+    const date = store.selectedSlot?.date
+        ? store.selectedSlot.date.replace(/-/g, '/')
+        : '未選択'
+    const time = store.selectedSlot?.timeslot?.time ?? '未選択'
+    const dur = store.selectedClass?.duration
+        ? `${store.selectedClass.duration}分（目安）`
+        : '未設定'
+    const note = remarks.value?.trim() ? remarks.value.trim() : 'なし'
 
+    return `ご予約ありがとうございます！🎉
+下記の内容で受付いたしました👇
+
+コース：${course}
+クラス：${klass}
+日付　：${date}
+時間　：${time}
+体験時間：${dur}
+備考　：${note}
+
+ご変更があればこのトークにご返信ください。
+当日お会いできるのを楽しみにしています😊`
+}
+
+async function send() {
     sending.value = true
     lastLog.value = ''
 
     return new Promise<void>(async (resolve, reject) => {
         try {
             const { idToken, aud, sub, exp } = await getFreshIdTokenOrRelogin()
+            const text = buildMessage();
 
             const resp = await fetch('/api/line/push', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ idToken, text: text.value }),
+                body: JSON.stringify({ idToken, text: text }),
             })
             const data = await resp.json().catch(() => null)
 
@@ -122,6 +136,11 @@ async function send() {
             lastLog.value = JSON.stringify({ status: resp.status, body: data }, null, 2)
             resolve()
         } catch (e: any) {
+            if (e.message === 'LOGIN_REDIRECT') {
+                // ここは「正常な」ケースなので変なアラートを出さない
+                return
+            }
+
             // ここで見えている "InvalidCharacterError" は以前の atob() 由来でした
             console.error('[push] client-error', e)
             lastLog.value = `client-error: ${e?.message || e}`
@@ -141,7 +160,7 @@ async function getFreshIdTokenOrRelogin(graceSec = 30): Promise<{ idToken: strin
 
     if (!tok || !decoded) {
         liff.login({ redirectUri: location.href })
-        throw new Error('redirecting to login')
+        return Promise.reject(new Error('LOGIN_REDIRECT'))
     }
 
     const now = Math.floor(Date.now() / 1000)
