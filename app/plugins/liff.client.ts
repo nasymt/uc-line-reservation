@@ -1,67 +1,85 @@
 // app/plugins/liff.client.ts
 import liff from '@line/liff'
 
+/** 指定条件が満たされるまで待つユーティリティ */
+async function waitFor<T>(fn: () => T | null | undefined | false, {
+  timeoutMs = 8000,
+  intervalMs = 120,
+} = {}): Promise<T> {
+  const t0 = Date.now()
+  for (;;) {
+    const v = fn()
+    if (v) return v as T
+    if (Date.now() - t0 > timeoutMs) throw new Error('waitFor: timeout')
+    await new Promise(r => setTimeout(r, intervalMs))
+  }
+}
+
 export default defineNuxtPlugin(async () => {
   const { public: pub } = useRuntimeConfig()
 
-  // ---- 1) LIFF 初期化 ----
+  // 1) LIFF init
   try {
-    if (!pub.liffId) {
-      console.error('[LIFF] NUXT_PUBLIC_LIFF_ID が未設定です')
-      return
-    }
     await liff.init({ liffId: pub.liffId })
   } catch (e) {
-    console.error('[LIFF] init 失敗。エンドポイントURL/LIFF ID/ネットワークを確認', e)
+    console.error('[LIFF] init failed', e)
     return
   }
 
-  // 参考ログ（今いるURLと、LIFF設定のエンドポイント一致チェックに役立つ）
-  try {
-    const env = (liff as any).getEnvironment?.()
-    console.log('[LIFF] env:', env)
-    console.log('[LIFF] href:', location.href)
-  } catch {}
-
-  // ---- 2) ログイン制御 ----
+  // 2) 外部ブラウザだけ login を呼ぶ（LIFF内は自動ログイン）
   const inClient = (liff as any).getEnvironment?.().isInClient ?? false
 
-  // LIFF内（LINEアプリ内）では基本「自動ログイン」される。外部ブラウザのみ login() を呼ぶ
-  if (!inClient && !liff.isLoggedIn()) {
-    // ※ redirectUri は“今いるURL”に戻すのが一番安全
-    const redirectUri = location.href
-    console.log('[LIFF] 外部ブラウザ。ログインへ redirect:', redirectUri)
-    liff.login({ redirectUri })
-    return // ここで処理は中断（ログイン後に戻ってくる）
-  }
+  // → ログイン往復でクエリを落とさない保険
+  const qs = location.search.slice(1)
+  if (qs) sessionStorage.setItem('recQS', qs)
 
-  // ---- 3) IDトークンの取得とデコード ----
-  const idToken = liff.getIDToken()
-  if (!idToken) {
-    console.warn('[LIFF] idToken が取得できませんでした。scope=openid / login 成否を確認')
+  if (!inClient && !liff.isLoggedIn()) {
+    liff.login({ redirectUri: location.href }) // ← クエリごと戻る
     return
   }
 
-  const decoded: any = liff.getDecodedIDToken?.()
-  const aud = decoded?.aud // これが“検証に使うべきチャネルID”
-  const sub = decoded?.sub
-  console.log('[LIFF] decoded:', decoded)
-  console.log('[LIFF] aud(=client_id):', aud, 'sub(userId):', sub)
+  // 3) 復帰後：recommended* が消えたら復元（保険）
+  if (!location.search.includes('recommendedClass') &&
+      !location.search.includes('recommendedCourse')) {
+    const saved = sessionStorage.getItem('recQS')
+    if (saved) {
+      const url = new URL(location.href)
+      const sp = new URLSearchParams(saved)
+      sp.forEach((v, k) => url.searchParams.set(k, v))
+      sessionStorage.removeItem('recQS')
+      history.replaceState(null, '', url.toString())
+    }
+  }
 
-  // ---- 4) サーバへ検証リクエスト ----
+  // 4) ★ ここが重要：idToken & aud が揃うまで待つ
   try {
-    const session = await $fetch('/api/line/session', {
+    await waitFor(() => liff.getIDToken())
+  } catch {
+    console.warn('[LIFF] idToken not ready; skip session call')
+    return
+  }
+
+  const idToken = liff.getIDToken()!
+  const decoded: any = liff.getDecodedIDToken?.()
+  const aud = decoded?.aud
+  const sub = decoded?.sub
+  console.log('[LIFF] ready. aud=', aud, 'sub=', sub)
+
+  // aud が取れない＝scope=openid なし/設定不整合のことが多い
+  if (!aud) {
+    console.warn('[LIFF] aud missing. Check scope=openid & endpoint URL.')
+    return
+  }
+
+  // 5) ここで初めてサーバ検証（初回 403 を防ぐ）
+  try {
+    await $fetch('/api/line/session', {
       method: 'POST',
-      body: {
-        idToken,        // 必須
-        clientId: aud,  // ← ここが重要（開発/本番で異なるチャネルIDに対応）
-      },
+      body: { idToken, clientId: aud },
     })
-    console.log('[LIFF] /api/line/session OK:', session)
   } catch (e: any) {
-    // サーバの statusMessage を見やすく表示
     const status = e?.response?.status || e?.status || 0
     const msg = e?.data || e?.statusMessage || e?.message
-    console.error(`[LIFF] /api/line/session 失敗 (${status})`, msg)
+    console.error(`[LIFF] /api/line/session failed (${status})`, msg)
   }
 })
