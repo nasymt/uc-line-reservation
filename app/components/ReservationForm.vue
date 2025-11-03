@@ -19,6 +19,7 @@
 import { ref, computed } from 'vue'
 import { useReservationStore } from '~/stores/reservation';
 import { useGoTo } from '#imports';
+import liff from '@line/liff';
 
 defineEmits<{ (e: 'select', iso: string): void }>()
 const goTo = useGoTo();
@@ -40,6 +41,7 @@ watch(() => store.selectedClass, (newClass) => {
 
 onMounted(async () => {
     store.loadSettings();
+    liff.login();
     console.log('ReservationForm mounted')
 })
 
