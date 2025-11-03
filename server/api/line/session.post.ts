@@ -1,19 +1,40 @@
-// app/server/api/line/session.post.ts
+// server/api/line/session.post.ts
 export default defineEventHandler(async (event) => {
   const { idToken } = await readBody<{ idToken?: string }>(event)
-  if (!idToken) throw createError({ statusCode: 400, statusMessage: 'idToken required' })
+  if (!idToken) {
+    throw createError({ statusCode: 400, statusMessage: 'idToken required' })
+  }
 
-  const { loginChannelId } = useRuntimeConfig().public
-  if (!loginChannelId) throw createError({ statusCode: 500, statusMessage: 'server misconfig: loginChannelId' })
+  // トークンを自分で開けて、その中に書いてある aud (=ほんとの client_id) を使う
+  let aud: string | undefined
+  try {
+    const [, payload] = idToken.split('.')
+    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString())
+    aud = decoded.aud
+  } catch (e) {
+    throw createError({ statusCode: 400, statusMessage: 'invalid idToken format' })
+  }
 
+  if (!aud) {
+    throw createError({ statusCode: 400, statusMessage: 'aud missing' })
+  }
+
+  // LINE公式に「このトークン本物？」って聞く
   const res = await $fetch('https://api.line.me/oauth2/v2.1/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       id_token: idToken,
-      client_id: String(loginChannelId), // ← Secretではなく“数字のChannel ID”
+      client_id: aud, // ← ここをenvの値じゃなくて、トークンの中のaudにする
     }),
+  }).catch((e: any) => {
+    throw createError({
+      statusCode: e?.response?.status || 400,
+      statusMessage: e?.data?.error_description || e?.message || 'verify failed',
+    })
   })
+
+  // 通ったら userId を返す
   const { sub } = res as { sub: string }
-  return { userId: sub }
+  return { ok: true, userId: sub }
 })

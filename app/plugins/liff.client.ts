@@ -60,7 +60,7 @@ export default defineNuxtPlugin(async () => {
     return
   }
 
-  const inClient = liff.getEnvironment?.().isInClient ?? false
+  const inClient = (liff as any).getEnvironment?.().isInClient ?? false
 
   // 2) ログイン往復で落ちないよう、現在のクエリを退避
   const qs = location.search.slice(1)

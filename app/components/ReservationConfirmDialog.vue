@@ -73,8 +73,8 @@ const emit = defineEmits<{ (e: 'update:model'): void }>()
 const onConfirm = async () => {
     send().then(() => {
         console.log('Reservation confirmed')
-        // emit('update:model');
-        // model.value = false;
+        emit('update:model');
+        model.value = false;
     }).catch((e) => {
         console.error('Error sending reservation confirmation:', e)
         errorAlert.value = true
