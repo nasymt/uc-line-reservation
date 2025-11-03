@@ -87,6 +87,11 @@ const sending = ref(false)
 const lastLog = ref('')
 const errorAlert = ref(false);
 const debugLogs = useState<string[]>('__debug_logs', () => []);
+const liffReady = ref(false)
+
+onMounted(() => {
+    liffReady.value = true;
+})
 
 function buildMessage() {
     const course = store.selectedCourse?.label ?? '未選択'
@@ -115,43 +120,17 @@ function buildMessage() {
 }
 
 async function send() {
-    sending.value = true
-    lastLog.value = ''
+  if (!liffReady.value) return // 念のためガード
 
-    return new Promise<void>(async (resolve, reject) => {
-        try {
-            const { idToken, aud, sub, exp } = await getFreshIdTokenOrRelogin()
-            const text = buildMessage();
-
-            const resp = await fetch('/api/line/push', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ idToken, text: text }),
-            })
-            const data = await resp.json().catch(() => null)
-
-            console.log('[push] status=', resp.status, 'body=', data, { aud, sub, exp })
-            debugLogs.value.unshift(JSON.stringify({ status: resp.status, data }, null, 2))
-            debugLogs.value = debugLogs.value.slice(0, 10)
-            lastLog.value = JSON.stringify({ status: resp.status, body: data }, null, 2)
-            resolve()
-        } catch (e: any) {
-            if (e.message === 'LOGIN_REDIRECT') {
-                // ここは「正常な」ケースなので変なアラートを出さない
-                return
-            }
-
-            // ここで見えている "InvalidCharacterError" は以前の atob() 由来でした
-            console.error('[push] client-error', e)
-            lastLog.value = `client-error: ${e?.message || e}`
-            debugLogs.value.unshift(JSON.stringify(e, null, 2))
-            debugLogs.value = debugLogs.value.slice(0, 10)
-
-            reject(e)
-        } finally {
-            sending.value = false
-        }
-    });
+  const message = buildMessage()
+  const idToken = liff.getIDToken()
+  const resp = await fetch('/api/line/push', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ idToken, text: message }),
+  })
+  const data = await resp.json().catch(() => null)
+  console.log('push result', resp.status, data)
 }
 
 // リトライしてIDトークンを取るやつ
