@@ -155,8 +155,16 @@ async function send() {
 }
 
 async function getFreshIdTokenOrRelogin(graceSec = 30): Promise<{ idToken: string; exp: number; aud: string; sub: string }> {
-    const tok = liff.getIDToken?.()
-    const decoded: any = liff.getDecodedIDToken?.() // ← これを信頼して使う
+    const start = Date.now()
+    let tok: string | null = null
+    let decoded: any = null
+
+    while (Date.now() - start < 2000) { // 最大2秒待つ
+        tok = liff.getIDToken?.() ?? null
+        decoded = liff.getDecodedIDToken?.() ?? null
+        if (tok && decoded) break
+        await new Promise((r) => setTimeout(r, 120))
+    }
 
     if (!tok || !decoded) {
         liff.login({ redirectUri: location.href })
