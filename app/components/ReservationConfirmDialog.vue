@@ -31,7 +31,7 @@
                         <tr>
                             <td>備考欄</td>
                             <td>
-                                <div >
+                                <div>
                                     <v-textarea v-model="remarks" variant="outlined" rows="2" no-resize hide-details
                                         density="comfortable" class="mt-4" />
                                 </div>
@@ -98,6 +98,7 @@ const sending = ref(false)
 // const status = ref('')
 const lastLog = ref('')
 const errorAlert = ref(false);
+const debugLogs = useState<string[]>('__debug_logs', () => []);
 
 async function send() {
 
@@ -116,12 +117,17 @@ async function send() {
             const data = await resp.json().catch(() => null)
 
             console.log('[push] status=', resp.status, 'body=', data, { aud, sub, exp })
+            debugLogs.value.unshift(JSON.stringify({ status: resp.status, data }, null, 2))
+            debugLogs.value = debugLogs.value.slice(0, 10)
             lastLog.value = JSON.stringify({ status: resp.status, body: data }, null, 2)
             resolve()
         } catch (e: any) {
             // ここで見えている "InvalidCharacterError" は以前の atob() 由来でした
             console.error('[push] client-error', e)
             lastLog.value = `client-error: ${e?.message || e}`
+            debugLogs.value.unshift(JSON.stringify(e, null, 2))
+            debugLogs.value = debugLogs.value.slice(0, 10)
+
             reject(e)
         } finally {
             sending.value = false

@@ -1,6 +1,7 @@
 <template>
     <template v-if="isReservationCompleted"><thank-you-view /></template>
     <template v-else>
+        <debug-panel />
         <reservation-course />
         <reservation-class />
         <reservation-date id="dateSection" ref="dateSection" />
