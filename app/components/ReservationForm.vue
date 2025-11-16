@@ -31,7 +31,6 @@ const isReservationCompleted = ref(false);
 watch(() => store.selectedClass, (newClass) => {
     if (newClass) {
         // コース選択後に日付セクションへスクロール
-        console.log('Class selected, scrolling to date section', newClass);
         if (dateSection.value) {
             goTo(dateSection.value, { offset: -80 });
         }

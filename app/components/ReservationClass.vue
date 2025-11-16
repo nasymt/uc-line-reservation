@@ -12,12 +12,8 @@
                             :style="{ color: '#43C0A2', fontWeight: '600' }">(あなたへのオススメ!)</span>
                     </template>
                     <template #prepend>
-                        <v-checkbox
-                            :model-value="isSelected(c)"
-                            @click.stop="store.setSelectedClass(c)"
-                            :aria-pressed="isSelected(c)"
-                            :label="''"/>
-                        <!-- <v-img :src="c.img" alt="" width="96" height="64" class="class-thumb rounded mr-4" cover /> -->
+                        <v-checkbox :model-value="isSelected(c)" @click.stop="store.setSelectedClass(c)"
+                            :aria-pressed="isSelected(c)" :label="''" />
                     </template>
 
                     <!-- 右側のボタン群（共通の詳細／選択） -->
@@ -27,12 +23,6 @@
                             <v-btn variant="outlined" size="small" @click="onClickDetail(c)">
                                 詳細
                             </v-btn>
-                            <!-- <v-btn :color="store.selectedClass?.id === c.id ? 'primary' : undefined"
-                                :variant="store.selectedClass?.id === c.id ? 'flat' : 'outlined'" size="small"
-                                @click.stop="store.setSelectedClass(c)"
-                                :aria-pressed="store.selectedClass?.id === c.id">
-                                {{ store.selectedClass?.id === c.id ? '✓ 選択中' : '選択' }}
-                            </v-btn> -->
                         </div>
                     </template>
                 </v-list-item>
@@ -41,7 +31,8 @@
             <!-- <class-card /> -->
         </template>
     </section-card>
-    <class-detail-dialog v-if="detailClass" :selected-class="detailClass" v-model="detailDialogOpen" />
+    <class-detail-dialog v-if="detailClass" :selected-class="detailClass" v-model="detailDialogOpen"
+        @select-class="onSelectClass" />
 </template>
 
 <script setup lang="ts">
@@ -59,6 +50,13 @@ const filteredClasses = computed(() => {
 const onClickDetail = (c: LessonClass) => {
     detailClass.value = c;
     detailDialogOpen.value = true;
+}
+
+const onSelectClass = (selectedClass: LessonClass) => {
+    detailDialogOpen.value = false
+    nextTick(() => {
+        store.setSelectedClass(selectedClass)
+    })
 }
 
 </script>

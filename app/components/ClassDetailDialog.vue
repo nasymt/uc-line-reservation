@@ -52,12 +52,16 @@
                     年齢や成長に合わせて次はペアクラスです。
                 </p>
             </v-card-text>
+            <v-card-actions class="justify-center pa-4">
+                <v-btn color="success" variant="flat" large @click="onSelectClass" rounded>
+                    このコースを選ぶ
+                </v-btn>
+            </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useDisplay } from 'vuetify'
 import type { LessonClass } from '~/types';
 
@@ -68,6 +72,15 @@ const props = defineProps({
         required: true
     }
 });
+
+const emit = defineEmits<{
+  (e: 'select-class', selectedClass: LessonClass): void
+}>()
+
+const onSelectClass = () => {
+  emit('select-class', props.selectedClass)
+//   open.value = false;
+}
 
 const { xs } = useDisplay()  // xsはモバイル判定 → fullscreenに使用
 </script>
