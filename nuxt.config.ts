@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     public: {
       liffId: process.env.NUXT_PUBLIC_LIFF_ID,
       loginChannelId: process.env.LINE_LOGIN_CHANNEL_ID,
-      liffRedirect: process.env.NUXT_PUBLIC_LIFF_REDIRECT,
+      mockLiff: process.env.NUXT_PUBLIC_MOCK_LIFF === "1",
     },
     line: {
       channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
